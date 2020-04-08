@@ -31,13 +31,12 @@ USER currentuser;
 CchatroomDlg::CchatroomDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CHATROOM_DIALOG, pParent)
 {
+	//different user id for every client 
 	srand((int)time(NULL));
 	currentuser.id = rand();
 	currentuser.gender = 0;
 	_itoa_s(currentuser.id, currentuser.name, 10);
-	//sprintf_s(currentuser.name, "%s", currentuser.id);
-	//strcpy_s(currentuser.name, "xiaoming");
-	//currentuser.name = "haha";
+	
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);	
 }
 
@@ -66,6 +65,7 @@ BOOL CchatroomDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
+
 	GetDlgItem(IDC_EDIT_INPUT)->SetFocus();
 	WSADATA wsadata;
 	int iResult = WSAStartup(MAKEWORD(2, 2), &wsadata);
@@ -92,8 +92,6 @@ BOOL CchatroomDlg::OnInitDialog()
 		return TRUE;
 	}
 
-	//update userlist
-	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadPro_updateuserlist, (LPVOID)addr, 0, NULL);
 	return FALSE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -146,9 +144,8 @@ BOOL CchatroomDlg::PreTranslateMessage(MSG* pMsg)
 			
 			CString inputcontent;
 			GetDlgItem(IDC_EDIT_INPUT)->GetWindowText(inputcontent);
-			USES_CONVERSION;
-			char* sendData = T2A(inputcontent);
-			
+			char* sendData = ::CString2CHAR(inputcontent);
+
 			MESSAGE ms;
 			ms.user = currentuser;
 			strcpy_s(ms.message_data, sendData);
@@ -161,16 +158,16 @@ BOOL CchatroomDlg::PreTranslateMessage(MSG* pMsg)
 			}
 			
 			GetDlgItem(IDC_EDIT_INPUT)->SetWindowTextW(L"");
+			
 			do
 			{
 				res = recv(ClientSocket, recvbuf, sizeof(MESSAGE), 0);
 				if (res>0)
 				{
 					MESSAGE mss = *(PMESSAGE)recvbuf;
-					USES_CONVERSION;
 					CString show;
 					GetDlgItem(IDC_EDIT_SHOWCHATCONTENT)->GetWindowTextW(show);
-					show = show + A2W(mss.user.name) + A2W("\r\n")+A2W(mss.message_data)+A2W("\r\n");
+					show = show + CHAR2CString(mss.user.name) + CHAR2CString("\r\n") + CHAR2CString(mss.message_data) + CHAR2CString("\r\n");
 					
 					((CEdit*)GetDlgItem(IDC_EDIT_SHOWCHATCONTENT))->SetWindowTextW(show);
 					break;

@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 // CchatroomDlg 对话框
 class CchatroomDlg : public CDialogEx
 {

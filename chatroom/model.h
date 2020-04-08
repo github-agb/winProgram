@@ -2,8 +2,9 @@
 #ifndef __MODEL
 #define __MODEL
 
-#define MS_TYPE_GET 0;
-#define MS_TYPE_UPDATE_USERLIST 1;
+#define MS_TYPE_CHAT_CONTENT (0)
+#define MS_TYPE_UPDATE_USERLIST (1)
+
 typedef struct User
 {
 	int id;
