@@ -91,7 +91,7 @@ BOOL CchatroomDlg::OnInitDialog()
 		closesocket(ClientSocket);
 		return TRUE;
 	}
-
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadPro_RecvMsg, (LPVOID)&ClientSocket, 0, NULL);
 	return FALSE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -148,8 +148,8 @@ BOOL CchatroomDlg::PreTranslateMessage(MSG* pMsg)
 
 			MESSAGE ms;
 			ms.user = currentuser;
+			ms.type = MS_TYPE_CHAT_CONTENT;
 			strcpy_s(ms.message_data, sendData);
-			//ms.message_data = sendData;
 			int res = send(ClientSocket, (char*)&ms, sizeof(ms), 0);
 			if (res == SOCKET_ERROR)
 			{
@@ -158,7 +158,7 @@ BOOL CchatroomDlg::PreTranslateMessage(MSG* pMsg)
 			}
 			
 			GetDlgItem(IDC_EDIT_INPUT)->SetWindowTextW(L"");
-			
+			/*
 			do
 			{
 				res = recv(ClientSocket, recvbuf, sizeof(MESSAGE), 0);
@@ -185,6 +185,7 @@ BOOL CchatroomDlg::PreTranslateMessage(MSG* pMsg)
 					}
 				}
 			} while (res>0);
+			*/
 		}
 		return TRUE;
 	}

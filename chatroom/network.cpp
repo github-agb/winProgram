@@ -20,7 +20,6 @@ DWORD connect2server(SOCKET *ClientSocket,addrinfo *addr)
 	return 0;
 }
 
-/*
 
 DWORD ThreadPro_RecvMsg(LPVOID clientSocket)
 {
@@ -41,6 +40,10 @@ DWORD ThreadPro_RecvMsg(LPVOID clientSocket)
 				if (ms.type == MS_TYPE_CHAT_CONTENT)
 				{
 					PChatroomDlg->GetDlgItem(IDC_EDIT_SHOWCHATCONTENT)->GetWindowTextW(show);
+					show = show + CHAR2CString(ms.user.name) + CHAR2CString("\r\n") + CHAR2CString(ms.message_data) + CHAR2CString("\r\n");
+
+					PChatroomDlg->GetDlgItem(IDC_EDIT_SHOWCHATCONTENT)->SetWindowTextW(show);
+					break;
 				}
 				if (ms.type == MS_TYPE_UPDATE_USERLIST)
 				{
@@ -62,7 +65,7 @@ DWORD ThreadPro_RecvMsg(LPVOID clientSocket)
 	}
 	return 0;
 }
-*/
+
 
 /*
 DWORD ThreadPro_updateuserlist(LPVOID addrinfohints)

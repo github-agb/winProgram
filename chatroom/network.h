@@ -21,7 +21,7 @@
 
 DWORD connect2server(SOCKET *ClientSocket,addrinfo *addr);
 //DWORD ThreadPro_updateuserlist(LPVOID addrinfohints);
-//DWORD ThreadPro_RecvMsg(LPVOID clientSocket);
+DWORD ThreadPro_RecvMsg(LPVOID clientSocket);
 char* CString2CHAR(CString cstring);
 
 CString CHAR2CString(CHAR* ch);
