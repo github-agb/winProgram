@@ -34,4 +34,7 @@ private:
 	CEdit m_showchatcontent_edit;
 public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnClose();
+private:
+	CListCtrl m_users_list;
 };

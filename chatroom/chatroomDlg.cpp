@@ -27,6 +27,8 @@ char recvbuf[DEFAULT_BUFFER_LEN];
 
 USER currentuser;
 
+CRITICAL_SECTION cs;
+
 // CchatroomDlg 对话框
 CchatroomDlg::CchatroomDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CHATROOM_DIALOG, pParent)
@@ -45,11 +47,13 @@ void CchatroomDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_EDIT_INPUT, m_input_edit);
 	DDX_Control(pDX, IDC_EDIT_SHOWCHATCONTENT, m_showchatcontent_edit);
+	DDX_Control(pDX, IDC_LIST_USERS, m_users_list);
 }
 
 BEGIN_MESSAGE_MAP(CchatroomDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -66,6 +70,9 @@ BOOL CchatroomDlg::OnInitDialog()
 
 	// TODO: 在此添加额外的初始化代码
 
+	InitializeCriticalSection(&cs);
+
+	//鼠标焦点定位在输入框
 	GetDlgItem(IDC_EDIT_INPUT)->SetFocus();
 	WSADATA wsadata;
 	int iResult = WSAStartup(MAKEWORD(2, 2), &wsadata);
@@ -92,6 +99,7 @@ BOOL CchatroomDlg::OnInitDialog()
 		return TRUE;
 	}
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadPro_RecvMsg, (LPVOID)&ClientSocket, 0, NULL);
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadPro_updateuserlist, (LPVOID)&ClientSocket, 0, NULL);
 	return FALSE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -150,7 +158,9 @@ BOOL CchatroomDlg::PreTranslateMessage(MSG* pMsg)
 			ms.user = currentuser;
 			ms.type = MS_TYPE_CHAT_CONTENT;
 			strcpy_s(ms.message_data, sendData);
+			EnterCriticalSection(&cs);
 			int res = send(ClientSocket, (char*)&ms, sizeof(ms), 0);
+			LeaveCriticalSection(&cs);
 			if (res == SOCKET_ERROR)
 			{
 				closesocket(ClientSocket);
@@ -158,34 +168,7 @@ BOOL CchatroomDlg::PreTranslateMessage(MSG* pMsg)
 			}
 			
 			GetDlgItem(IDC_EDIT_INPUT)->SetWindowTextW(L"");
-			/*
-			do
-			{
-				res = recv(ClientSocket, recvbuf, sizeof(MESSAGE), 0);
-				if (res>0)
-				{
-					MESSAGE mss = *(PMESSAGE)recvbuf;
-					CString show;
-					GetDlgItem(IDC_EDIT_SHOWCHATCONTENT)->GetWindowTextW(show);
-					show = show + CHAR2CString(mss.user.name) + CHAR2CString("\r\n") + CHAR2CString(mss.message_data) + CHAR2CString("\r\n");
-					
-					((CEdit*)GetDlgItem(IDC_EDIT_SHOWCHATCONTENT))->SetWindowTextW(show);
-					break;
-				}
-				else
-				{
-					if (res ==0)
-					{
-						break;
-					}
-					else
-					{
-						printf("recv error ...");
-						break;
-					}
-				}
-			} while (res>0);
-			*/
+			
 		}
 		return TRUE;
 	}
@@ -195,4 +178,13 @@ BOOL CchatroomDlg::PreTranslateMessage(MSG* pMsg)
 	}
 
 	return CDialogEx::PreTranslateMessage(pMsg);
+}
+
+
+void CchatroomDlg::OnClose()
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	shutdown(ClientSocket, SD_BOTH);
+	closesocket(ClientSocket);
+	CDialogEx::OnClose();
 }

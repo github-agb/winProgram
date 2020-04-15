@@ -13,3 +13,11 @@
 - 开启game进程，
 - 用myconsole把dll注入到game，dll模块和myconsole模块利用共享内存实现进程通信，
 - 在myconsole的控制台输入指令，dllmokuai接受指令，调用game模块的方法，实现进程通信，控制game进程
+
+#### 二，多人聊天工具
+
+- 服务器端 -ServerDemo，Windows环境
+- 客户端 - chatroom
+- 在javaProgram仓库下还有个java版的服务器程序ServerDemo，可以在linux环境下跑
+
+学习群发功能写的。
