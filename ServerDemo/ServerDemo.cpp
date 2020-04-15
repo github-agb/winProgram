@@ -8,7 +8,6 @@
 #include <iphlpapi.h>
 #include <stdio.h>
 #include <iostream>
-#include <map>
 #include <set>
 
 #pragma comment(lib, "Ws2_32.lib")
@@ -30,50 +29,78 @@ typedef struct Message
 }MESSAGE, * PMESSAGE;
 
 //int-> userID;
-map<int, SOCKET> users;
 set<SOCKET> user_sockets;
+
+CRITICAL_SECTION cs;
+
 void sendMessageToUsers(MESSAGE ms, std::set<SOCKET> user_sockets);
 
 #define DEFAULT_BUFFER_LEN sizeof(MESSAGE)
+
+#define MS_TYPE_CHAT_CONTENT (0)
+#define MS_TYPE_UPDATE_USERLIST (1)
 
 DWORD ThreadPro(LPVOID lpParameter)
 {
 	SOCKET s = *((SOCKET*)lpParameter);
 	int iCurrentResult;
-	int  iSendResult;
 	int recvbuflen = DEFAULT_BUFFER_LEN;
 	char recvbuf[DEFAULT_BUFFER_LEN];
-	while (1)
+	do
 	{
-		do
+		iCurrentResult = recv(s, recvbuf, sizeof(MESSAGE), 0);
+		printf("hehe\n");
+		if (iCurrentResult > 0)
 		{
-			iCurrentResult = recv(s, recvbuf, sizeof(MESSAGE), 0);
-			if (iCurrentResult > 0)
+			printf("haha\n");
+			MESSAGE ms = *(PMESSAGE)recvbuf;
+			if (ms.type == MS_TYPE_CHAT_CONTENT)
 			{
-				MESSAGE ms = *(PMESSAGE)recvbuf;
-				users[ms.USERFORCLIENT.id] = s;
 				printf("%s\n", ms.message_data);
-				//iSendResult = send(s, recvbuf, sizeof(MESSAGE), 0);
+				EnterCriticalSection(&cs);
 				sendMessageToUsers(ms, user_sockets);
-				
-				break;
+				LeaveCriticalSection(&cs);
+				continue;
 			}
-			else if (iCurrentResult == 0)
+			if (ms.type == MS_TYPE_UPDATE_USERLIST)
 			{
-				//printf("Connection closing ...\n");
-				break;
+				memcpy_s(ms.message_data, DEFAULT_BUFFER_LEN, 0, NULL);
+				sprintf_s(ms.message_data, DEFAULT_BUFFER_LEN, "the %s times update users list", ms.message_data);
+				EnterCriticalSection(&cs);
+				sendMessageToUsers(ms, user_sockets);
+				LeaveCriticalSection(&cs);
+				continue;
 			}
-			else
-			{
-				break;
-			}
-		} while (iCurrentResult > 0);
-	}
+
+		}
+		else if (iCurrentResult == 0)
+		{
+			printf("Connection closing ...\n");
+			EnterCriticalSection(&cs);
+			user_sockets.erase(s);
+			shutdown(s, SD_BOTH);
+			closesocket(s);
+			LeaveCriticalSection(&cs);
+			break;
+		}
+		else
+		{
+			printf("client thread erro : %d ...\n", WSAGetLastError());
+			EnterCriticalSection(&cs);
+			user_sockets.erase(s);
+			shutdown(s, SD_BOTH);
+			closesocket(s);
+			LeaveCriticalSection(&cs);
+			break;
+		}
+	} while (iCurrentResult > 0);
+
 	return 0;
 }
 
 int main()
 {
+	InitializeCriticalSection(&cs);
 	//Initializing Winsock
 	WSADATA wsaData;
 	int iResult;
@@ -138,13 +165,17 @@ int main()
 	int addr_len = sizeof(newuser);
 	while (clientSocket = accept(listenSocket, &newuser, &addr_len))
 	{
-		user_sockets.insert(clientSocket);
+
 		in_addr aa = ((SOCKADDR_IN*)&newuser)->sin_addr;
 		char destIP[20];
 		inet_ntop(AF_INET, (void*)&aa, destIP, 20);
 		printf("the %s user is in ...\n", destIP);
-		if (clientSocket != SOCKET_ERROR)
+		if (clientSocket != INVALID_SOCKET)
 		{
+			EnterCriticalSection(&cs);
+			user_sockets.insert(clientSocket);
+			LeaveCriticalSection(&cs);
+
 			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadPro, (LPVOID)(&clientSocket), 0, NULL);
 		}
 		else
@@ -152,6 +183,9 @@ int main()
 			closesocket(clientSocket);
 		}
 	}
+
+	closesocket(listenSocket);
+	WSACleanup();
 
 	return 0;
 }
@@ -170,10 +204,10 @@ void sendMessageToUsers(MESSAGE ms, std::set<SOCKET> user_sockets)
 		send_state = send(soc, data, datalen, 0);
 		if (send_state == SOCKET_ERROR)
 		{
-			user_sockets.erase(soc);
-			closesocket(soc);
+			//user_sockets.erase(soc);
+			//closesocket(soc);
+			printf("send erro : %d ...", WSAGetLastError());
 		}
-		//res = connect(soc,)
 	}
 }
 
