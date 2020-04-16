@@ -25,6 +25,8 @@ extern CRITICAL_SECTION cs;
 
 extern USER currentuser;
 
+extern int thread_signal;
+
 DWORD connect2server(SOCKET *ClientSocket,addrinfo *addr);
 DWORD ThreadPro_updateuserlist(LPVOID clientSocket);
 DWORD ThreadPro_RecvMsg(LPVOID clientSocket);

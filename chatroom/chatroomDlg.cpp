@@ -29,6 +29,8 @@ USER currentuser;
 
 CRITICAL_SECTION cs;
 
+int thread_signal = 1;
+
 // CchatroomDlg 对话框
 CchatroomDlg::CchatroomDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CHATROOM_DIALOG, pParent)
@@ -184,6 +186,7 @@ BOOL CchatroomDlg::PreTranslateMessage(MSG* pMsg)
 void CchatroomDlg::OnClose()
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	thread_signal = 0;
 	shutdown(ClientSocket, SD_BOTH);
 	closesocket(ClientSocket);
 	CDialogEx::OnClose();

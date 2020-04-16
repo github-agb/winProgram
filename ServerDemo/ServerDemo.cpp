@@ -48,11 +48,9 @@ DWORD ThreadPro(LPVOID lpParameter)
 	char recvbuf[DEFAULT_BUFFER_LEN];
 	do
 	{
-		iCurrentResult = recv(s, recvbuf, sizeof(MESSAGE), 0);
-		printf("hehe\n");
+		iCurrentResult = recv(s, recvbuf, DEFAULT_BUFFER_LEN, 0);
 		if (iCurrentResult > 0)
 		{
-			printf("haha\n");
 			MESSAGE ms = *(PMESSAGE)recvbuf;
 			if (ms.type == MS_TYPE_CHAT_CONTENT)
 			{
@@ -64,8 +62,10 @@ DWORD ThreadPro(LPVOID lpParameter)
 			}
 			if (ms.type == MS_TYPE_UPDATE_USERLIST)
 			{
-				memcpy_s(ms.message_data, DEFAULT_BUFFER_LEN, 0, NULL);
-				sprintf_s(ms.message_data, DEFAULT_BUFFER_LEN, "the %s times update users list", ms.message_data);
+				char temp[512];
+				sprintf_s(temp, 512, "%s", ms.message_data);
+				memset(ms.message_data, 0, 512);
+				sprintf_s(ms.message_data, 512, "%s update", temp);
 				EnterCriticalSection(&cs);
 				sendMessageToUsers(ms, user_sockets);
 				LeaveCriticalSection(&cs);
@@ -76,25 +76,17 @@ DWORD ThreadPro(LPVOID lpParameter)
 		else if (iCurrentResult == 0)
 		{
 			printf("Connection closing ...\n");
-			EnterCriticalSection(&cs);
-			user_sockets.erase(s);
-			shutdown(s, SD_BOTH);
-			closesocket(s);
-			LeaveCriticalSection(&cs);
 			break;
 		}
 		else
 		{
 			printf("client thread erro : %d ...\n", WSAGetLastError());
-			EnterCriticalSection(&cs);
-			user_sockets.erase(s);
-			shutdown(s, SD_BOTH);
-			closesocket(s);
-			LeaveCriticalSection(&cs);
 			break;
 		}
 	} while (iCurrentResult > 0);
-
+	EnterCriticalSection(&cs);
+	user_sockets.erase(s);
+	LeaveCriticalSection(&cs);
 	return 0;
 }
 

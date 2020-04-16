@@ -55,7 +55,6 @@ DWORD ThreadPro_RecvMsg(LPVOID clientSocket)
 				continue;
 			}
 
-			break;
 		}
 		else if (recvlen == 0)
 		{
@@ -66,7 +65,7 @@ DWORD ThreadPro_RecvMsg(LPVOID clientSocket)
 		{
 			break;
 		}
-	} while (recvlen > 0);
+	} while (recvlen > 0 && thread_signal == 1);
 	return 0;
 }
 
@@ -81,9 +80,9 @@ DWORD ThreadPro_updateuserlist(LPVOID clientSocket)
 	soc = *((SOCKET*)clientSocket);
 	int res;
 	int update_counts = 0;
-	while (1)
+	while (thread_signal ==1)
 	{
-		sprintf_s(ms.message_data, "%d", update_counts);
+		sprintf_s(ms.message_data,DEFAULT_BUFFER_LEN, "%d", update_counts);
 		EnterCriticalSection(&cs);
 		res = send(soc, (char*)&ms, sizeof(ms), 0);
 		LeaveCriticalSection(&cs);
